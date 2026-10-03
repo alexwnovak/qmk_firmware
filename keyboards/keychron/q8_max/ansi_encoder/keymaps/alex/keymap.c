@@ -31,7 +31,8 @@ enum layers {
 // ---- Tap dance: tap = Cmd+C, hold = FN2 layer ----
 
 enum td_keycodes {
-    TD_CMDCPY_FN2
+    TD_CMDCOPY_FN1,
+    TD_CMDPASTE_FN2
 };
 
 typedef enum {
@@ -53,14 +54,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,                KC_T,     KC_Y,     KC_U,                    KC_I,                 KC_O,     KC_P,      KC_LBRC,  KC_RBRC,            KC_BSLS,            KC_DEL,
         KC_ESC,   KC_A,     KC_S,     KC_D,     KC_F,                KC_G,               KC_H,                    KC_J,                 KC_K,     KC_L,      KC_SCLN,  KC_QUOT,            KC_ENT,             QK_BOOT,
         KC_LSFT,            KC_Z,     KC_X,     KC_C,                KC_V,     KC_B,     KC_TAB,                  KC_N,                 KC_M,     KC_COMM,   KC_DOT,   KC_SLSH,            KC_RSFT,  KC_UP,
-        KC_LCTL,  KC_LOPTN, KC_LCMMD,           MT(MOD_MEH, KC_SPC),                     MO(LAYER_NAVIGATION),    MO(LAYER_SYMBOLS),              KC_SPC,              TD(TD_CMDCPY_FN2),            KC_LEFT,  KC_DOWN,  KC_RGHT),
+        KC_LCTL,  KC_LOPTN, KC_LCMMD,           MT(MOD_MEH, KC_SPC),                     TD(TD_CMDCOPY_FN1),      TD(TD_CMDPASTE_FN2),            KC_SPC,              KC_TRNS,            KC_LEFT,  KC_DOWN,  KC_RGHT),
 
     [LAYER_NAVIGATION] = LAYOUT_ansi_69(
         KC_ESC,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     KC_9,     KC_0,      KC_MINS,  KC_EQL,   KC_BSPC,            KC_MUTE,
         KC_TAB,   KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_T,     KC_HOME,  KC_PGDN,  KC_PGUP,  KC_END,   KC_P,      KC_LBRC,  KC_RBRC,  KC_BSLS,            KC_DEL,
         KC_CAPS,  KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_G,               KC_LEFT,  KC_DOWN,  KC_UP,    KC_RGHT,   KC_SCLN,  KC_QUOT,  KC_ENT,             KC_HOME,
         KC_LSFT,            KC_F9,    KC_F10,   KC_F11,   KC_F12,   KC_B,     KC_BSPC,  KC_N,     KC_M,     KC_COMM,   KC_DOT,   KC_SLSH,  KC_RSFT,  KC_UP,
-        KC_LCTL,  KC_LWIN,  KC_LALT,            KC_SPC,             KC_TRNS,  KC_TRNS,            KC_SPC,              TD(TD_CMDCPY_FN2),  KC_LEFT,  KC_DOWN,  KC_RGHT),
+        KC_LCTL,  KC_LWIN,  KC_LALT,            KC_SPC,             KC_TRNS,  KC_TRNS,            KC_SPC,              KC_TRNS,  KC_LEFT,  KC_DOWN,  KC_RGHT),
 
     [LAYER_SYMBOLS] = LAYOUT_ansi_69(
         KC_GRV,   KC_BRID,  KC_BRIU,  KC_MCTRL, KC_LNPAD, UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,   KC_VOLD,  KC_VOLU,  _______,            UG_TOGG,
@@ -95,24 +96,49 @@ td_state_t cur_dance(tap_dance_state_t *state) {
     return TD_UNKNOWN;
 }
 
-void cmdcpy_fn2_finished(tap_dance_state_t *state, void *user_data) {
+void cmdcopy_fn1_finished(tap_dance_state_t *state, void *user_data) {
     td_state = cur_dance(state);
     switch (td_state) {
         case TD_SINGLE_TAP:
-            tap_code16(LGUI(KC_C)); // Cmd+C
+            tap_code16(LGUI(KC_C));  // Cmd+C
             break;
         case TD_SINGLE_HOLD:
-            layer_on(LAYER_META);
+            layer_on(LAYER_NAVIGATION);
             break;
         default:
             break;
     }
 }
 
-void cmdcpy_fn2_reset(tap_dance_state_t *state, void *user_data) {
+void cmdcopy_fn1_reset(tap_dance_state_t *state, void *user_data) {
     switch (td_state) {
         case TD_SINGLE_HOLD:
-            layer_off(LAYER_META);
+            layer_off(LAYER_NAVIGATION);
+            break;
+        default:
+            break;
+    }
+    td_state = TD_NONE;
+}
+
+void cmdpaste_fn2_finished(tap_dance_state_t *state, void *user_data) {
+    td_state = cur_dance(state);
+    switch (td_state) {
+        case TD_SINGLE_TAP:
+            tap_code16(LGUI(KC_V));  // Cmd+V
+            break;
+        case TD_SINGLE_HOLD:
+            layer_on(LAYER_SYMBOLS);
+            break;
+        default:
+            break;
+    }
+}
+
+void cmdpaste_fn2_reset(tap_dance_state_t *state, void *user_data) {
+    switch (td_state) {
+        case TD_SINGLE_HOLD:
+            layer_off(LAYER_SYMBOLS);
             break;
         default:
             break;
@@ -131,5 +157,6 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
 #endif // ENCODER_MAP_ENABLE
 
 tap_dance_action_t tap_dance_actions[] = {
-    [TD_CMDCPY_FN2] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, cmdcpy_fn2_finished, cmdcpy_fn2_reset),
+    [TD_CMDCOPY_FN1]    = ACTION_TAP_DANCE_FN_ADVANCED(NULL, cmdcopy_fn1_finished, cmdcopy_fn1_reset),
+    [TD_CMDPASTE_FN2]   = ACTION_TAP_DANCE_FN_ADVANCED(NULL, cmdpaste_fn2_finished, cmdpaste_fn2_reset),
 };
