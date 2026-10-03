@@ -14,10 +14,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define TAPPING_TERM 50
-#define PERMISSIVE_HOLD
-#define IGNORE_MOD_TAP_INTERRUPT
-
 #include QMK_KEYBOARD_H
 #include "keychron_common.h"
 
