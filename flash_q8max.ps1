@@ -8,13 +8,7 @@ param()
 
 $ErrorActionPreference = "Stop"
 
-$count = 10
-while ($count -gt 0) {
-    Write-Host "Flashing 'alex' keymap to keychron/q8_max/ansi_encoder in $count seconds..." -ForegroundColor Cyan
-    Start-Sleep -Seconds 1
-    $count--
-}
-
+Write-Host "Flashing 'alex' keymap to keychron/q8_max/ansi_encoder..." -ForegroundColor Cyan
 qmk flash -kb keychron/q8_max/ansi_encoder -km alex
 
 if ($LASTEXITCODE -ne 0) {
