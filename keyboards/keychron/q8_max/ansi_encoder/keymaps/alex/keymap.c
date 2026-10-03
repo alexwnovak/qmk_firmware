@@ -160,3 +160,60 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_CMDCOPY_FN1]    = ACTION_TAP_DANCE_FN_ADVANCED(NULL, cmdcopy_fn1_finished, cmdcopy_fn1_reset),
     [TD_CMDPASTE_FN2]   = ACTION_TAP_DANCE_FN_ADVANCED(NULL, cmdpaste_fn2_finished, cmdpaste_fn2_reset),
 };
+
+// ============================================================================
+// Chord: KC_P + KC_U within CHORD_WINDOW_MS  ->  "public"
+// (both keys must be physically down inside the window, either order)
+// ============================================================================
+#define CHORD_WINDOW_MS 15
+
+typedef struct {
+    uint16_t down_at;   // timer_read() at keypress
+    bool     down;      // key is physically held
+    bool     pending;   // still undecided: a tap is owed unless deferred says
+    bool     consumed;  // chord consumed this key, swallow release
+} chord_key_t;
+
+static chord_key_t kw_p = {0};
+static chord_key_t kw_u = {0};
+
+static uint32_t chord_decide(uint32_t trigger_time, void *arg) {
+    // After the window passes with no chord partner, emit each key's own tap.
+    if (kw_p.down && kw_p.pending) { tap_code(KC_P); kw_p.pending = false; }
+    if (kw_u.down && kw_u.pending) { tap_code(KC_U); kw_u.pending = false; }
+    return 0;
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (keycode != KC_P && keycode != KC_U) return true;
+
+    const bool is_p = (keycode == KC_P);
+    chord_key_t *s     = is_p ? &kw_p : &kw_u;
+    chord_key_t *other = is_p ? &kw_u : &kw_p;
+
+    if (record->event.pressed) {
+        // If the other key is down and still within the window: chord!
+        if (other->down && other->pending &&
+            (uint16_t)(timer_read() - other->down_at) <= CHORD_WINDOW_MS) {
+            other->pending = false;
+            other->consumed = true;         // swallow its eventual release
+            s->down = true;
+            s->pending = false;
+            s->consumed = true;             // swallow this key's release too
+            send_string("public");
+            return false;
+        }
+
+        s->down = true;
+        s->down_at = timer_read();
+        s->pending = true;
+        s->consumed = false;
+        defer_exec(CHORD_WINDOW_MS, chord_decide, NULL);
+        return false;
+    } else {
+        if (s->consumed) { s->consumed = false; s->down = false; s->pending = false; return false; }
+        if (s->pending) { tap_code(keycode); s->pending = false; }
+        s->down = false;
+        return false;
+    }
+}
