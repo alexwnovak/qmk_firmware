@@ -162,58 +162,159 @@ tap_dance_action_t tap_dance_actions[] = {
 };
 
 // ============================================================================
-// Chord: KC_P + KC_U within CHORD_WINDOW_MS  ->  "public"
-// (both keys must be physically down inside the window, either order)
+// Chord table: up to 3 keys. If all non-KC_NO keys are down within
+// CHORD_WINDOW_MS of each other (any order, presses or releases),
+// those keys are swallowed and the row's output string is typed.
+// Otherwise those keys fire their own taps as usual.
 // ============================================================================
+
 #define CHORD_WINDOW_MS 15
 
 typedef struct {
-    uint16_t down_at;   // timer_read() at keypress
-    bool     down;      // key is physically held
-    bool     pending;   // still undecided: a tap is owed unless deferred says
-    bool     consumed;  // chord consumed this key, swallow release
-} chord_key_t;
+    uint16_t keys[3];     // up to 3 keys; use KC_NO to pad unused slots
+    const char *output;
+} chord_t;
 
-static chord_key_t kw_p = {0};
-static chord_key_t kw_u = {0};
+static const chord_t CHORD_TABLE[] = {
+    { {KC_P, KC_U, KC_NO}, "public " },
+    { {KC_P, KC_R, KC_NO}, "private " },
+    { {KC_P, KC_O, KC_NO}, "protected " },
+    { {KC_S, KC_T, KC_NO}, "static " },
+    { {KC_S, KC_R, KC_NO}, "struct " },
+    { {KC_V, KC_O, KC_NO}, "void " },
+    { {KC_R, KC_D, KC_NO}, "readonly " },
+    { {KC_C, KC_N, KC_NO}, "const " },
+    { {KC_C, KC_L, KC_NO}, "class " },
+    { {KC_I, KC_N, KC_T},  "internal " },
+};
+
+#define CHORD_MAX_INFLIGHT 8
+
+typedef struct {
+    uint16_t keycode;
+    uint16_t down_at;     // timer_read() at keypress
+    bool     down;        // physically held?
+    bool     pending;     // tap owed? false once emitted or chord-consumed
+    bool     consumed;    // chord ate this key; swallow release
+    bool     hold_asserted; // released-on-release? we registered this key as held
+} inflight_key_t;
+
+static inflight_key_t inflight[CHORD_MAX_INFLIGHT];
+
+static inflight_key_t *find_inflight(uint16_t keycode) {
+    for (int i = 0; i < CHORD_MAX_INFLIGHT; i++) {
+        if (inflight[i].down || inflight[i].pending) {
+            if (inflight[i].keycode == keycode) return &inflight[i];
+        }
+    }
+    return NULL;
+}
+
+static void clear_inflight(inflight_key_t *s) {
+    s->down = false;
+    s->pending = false;
+    s->consumed = false;
+    s->hold_asserted = false;
+    s->keycode = KC_NO;
+}
+
+static bool key_in_table(uint16_t keycode) {
+    for (size_t r = 0; r < sizeof(CHORD_TABLE) / sizeof(CHORD_TABLE[0]); r++) {
+        for (int i = 0; i < 3; i++) {
+            if (CHORD_TABLE[r].keys[i] == keycode && keycode != KC_NO) return true;
+        }
+    }
+    return false;
+}
 
 static uint32_t chord_decide(uint32_t trigger_time, void *arg) {
-    // After the window passes with no chord partner, emit each key's own tap.
-    if (kw_p.down && kw_p.pending) { tap_code(KC_P); kw_p.pending = false; }
-    if (kw_u.down && kw_u.pending) { tap_code(KC_U); kw_u.pending = false; }
+    // Window elapsed: emit any still-pending taps as their own keycodes.
+    for (int i = 0; i < CHORD_MAX_INFLIGHT; i++) {
+        inflight_key_t *s = &inflight[i];
+
+        if (s->pending && !s->consumed) {
+            tap_code(s->keycode);
+        }
+
+        if (!s->down)
+            clear_inflight(s);   // release happened later, sweep
+        else {
+            s->pending = false; s->consumed = false;
+        }
+    }
     return 0;
 }
 
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (keycode != KC_P && keycode != KC_U) return true;
+static void try_fire_chords(void) {
+    uint16_t now = timer_read();
+    for (size_t r = 0; r < sizeof(CHORD_TABLE) / sizeof(CHORD_TABLE[0]); r++) {
+        const chord_t *c = &CHORD_TABLE[r];
+        int need = 0;      // how many keys the row needs
+        int got  = 0;      // how many of them are "active"
 
-    const bool is_p = (keycode == KC_P);
-    chord_key_t *s     = is_p ? &kw_p : &kw_u;
-    chord_key_t *other = is_p ? &kw_u : &kw_p;
+        for (int i = 0; i < 3; i++) {
+            uint16_t k = c->keys[i];
+            if (k == KC_NO || k == 0) continue;
+            need++;
 
-    if (record->event.pressed) {
-        // If the other key is down and still within the window: chord!
-        if (other->down && other->pending &&
-            (uint16_t)(timer_read() - other->down_at) <= CHORD_WINDOW_MS) {
-            other->pending = false;
-            other->consumed = true;         // swallow its eventual release
-            s->down = true;
-            s->pending = false;
-            s->consumed = true;             // swallow this key's release too
-            send_string("public");
-            return false;
+            inflight_key_t *s = find_inflight(k);
+            if (s && (s->down || s->pending)) {
+                uint16_t age = (uint16_t)(now - s->down_at);
+                if (age <= CHORD_WINDOW_MS) got++;
+            }
         }
 
+        if (got == need && need >= 2) {
+            // This chord fires.
+            for (int i = 0; i < 3; i++) {
+                uint16_t k = c->keys[i];
+                if (k == KC_NO || k == 0) continue;
+                inflight_key_t *s = find_inflight(k);
+                if (s) {
+                    s->pending = false;   // do not emit this key's tap
+                    s->consumed = true;   // release will be swallowed
+                }
+            }
+            send_string(c->output);
+            return;
+        }
+    }
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!key_in_table(keycode)) return true;
+
+    inflight_key_t *s = find_inflight(keycode);
+    if (record->event.pressed) {
+        if (!s) {
+            // see if we have room
+            s = NULL;
+            for (int i = 0; i < CHORD_MAX_INFLIGHT; i++)
+                if (!inflight[i].down && !inflight[i].pending) { s = &inflight[i]; break; }
+            if (!s) return true; // give up tracking this one
+            s->keycode = keycode;
+        }
         s->down = true;
         s->down_at = timer_read();
         s->pending = true;
         s->consumed = false;
         defer_exec(CHORD_WINDOW_MS, chord_decide, NULL);
+        try_fire_chords();
         return false;
     } else {
-        if (s->consumed) { s->consumed = false; s->down = false; s->pending = false; return false; }
-        if (s->pending) { tap_code(keycode); s->pending = false; }
-        s->down = false;
+        if (s) {
+            if (s->consumed) {
+                clear_inflight(s);
+            } else if (s->pending) {
+                tap_code(s->keycode);
+                clear_inflight(s);
+            } else if (s->hold_asserted) {
+                unregister_code(keycode);
+                clear_inflight(s);
+            } else {
+                clear_inflight(s);
+            }
+        }
         return false;
     }
 }
