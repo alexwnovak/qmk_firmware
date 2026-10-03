@@ -28,21 +28,39 @@ enum layers {
 #define FN1_MAC MO(MAC_FN1)
 #define FN1_WIN MO(WIN_FN1)
 
-// clang-format off
+// ---- Tap dance: tap = Cmd+C, hold = FN2 layer ----
+
+enum td_keycodes {
+    TD_CMDCPY_FN2
+};
+
+typedef enum {
+    TD_NONE,
+    TD_UNKNOWN,
+    TD_SINGLE_TAP,
+    TD_SINGLE_HOLD,
+} td_state_t;
+
+static td_state_t td_state;
+
+td_state_t cur_dance(tap_dance_state_t *state);
+void cmdcpy_fn2_finished(tap_dance_state_t *state, void *user_data);
+void cmdcpy_fn2_reset(tap_dance_state_t *state, void *user_data);
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [MAC_BASE] = LAYOUT_ansi_69(
         KC_ESC,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     KC_9,     KC_0,      KC_MINS,  KC_EQL,   KC_BSPC,            KC_MUTE,
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,      KC_LBRC,  KC_RBRC,  KC_BSLS,            KC_DEL,
         KC_CAPS,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,               KC_H,     KC_J,     KC_K,     KC_L,      KC_SCLN,  KC_QUOT,  KC_ENT,             KC_HOME,
         KC_LSFT,            KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     KC_B,     KC_N,     KC_M,     KC_COMM,   KC_DOT,   KC_SLSH,  KC_RSFT,  KC_UP,
-        KC_LCTL,  KC_LOPTN, KC_LCMMD,           KC_SPC,             FN1_MAC,  MO(FN2),            KC_SPC,              KC_RCMMD,           KC_LEFT,  KC_DOWN,  KC_RGHT),
+        KC_LCTL,  KC_LOPTN, KC_LCMMD,           KC_SPC,             FN1_MAC,  MO(FN2),            KC_SPC,              TD(TD_CMDCPY_FN2),  KC_LEFT,  KC_DOWN,  KC_RGHT),
 
     [WIN_BASE] = LAYOUT_ansi_69(
         KC_ESC,   KC_1,     KC_2,     KC_3,     KC_4,     KC_5,     KC_6,     KC_7,     KC_8,     KC_9,     KC_0,      KC_MINS,  KC_EQL,   KC_BSPC,            KC_MUTE,
         KC_TAB,   KC_Q,     KC_W,     KC_E,     KC_R,     KC_T,     KC_Y,     KC_U,     KC_I,     KC_O,     KC_P,      KC_LBRC,  KC_RBRC,  KC_BSLS,            KC_DEL,
         KC_CAPS,  KC_A,     KC_S,     KC_D,     KC_F,     KC_G,               KC_H,     KC_J,     KC_K,     KC_L,      KC_SCLN,  KC_QUOT,  KC_ENT,             KC_HOME,
         KC_LSFT,            KC_Z,     KC_X,     KC_C,     KC_V,     KC_B,     KC_B,     KC_N,     KC_M,     KC_COMM,   KC_DOT,   KC_SLSH,  KC_RSFT,  KC_UP,
-        KC_LCTL,  KC_LWIN,  KC_LALT,            KC_SPC,             FN1_WIN,  MO(FN2),            KC_SPC,              KC_RALT,            KC_LEFT,  KC_DOWN,  KC_RGHT),
+        KC_LCTL,  KC_LWIN,  KC_LALT,            KC_SPC,             FN1_WIN,  MO(FN2),            KC_SPC,              TD(TD_CMDCPY_FN2),  KC_LEFT,  KC_DOWN,  KC_RGHT),
 
     [MAC_FN1] = LAYOUT_ansi_69(
         KC_GRV,   KC_BRID,  KC_BRIU,  KC_MCTRL, KC_LNPAD, UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,   KC_VOLD,  KC_VOLU,  _______,            UG_TOGG,
@@ -66,6 +84,39 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______)
 };
 
+td_state_t cur_dance(tap_dance_state_t *state) {
+    if (state->count == 1) {
+        if (state->interrupted || !state->pressed) return TD_SINGLE_TAP;
+        else return TD_SINGLE_HOLD;
+    }
+    return TD_UNKNOWN;
+}
+
+void cmdcpy_fn2_finished(tap_dance_state_t *state, void *user_data) {
+    td_state = cur_dance(state);
+    switch (td_state) {
+        case TD_SINGLE_TAP:
+            tap_code16(LGUI(KC_C)); // Cmd+C
+            break;
+        case TD_SINGLE_HOLD:
+            layer_on(FN2);
+            break;
+        default:
+            break;
+    }
+}
+
+void cmdcpy_fn2_reset(tap_dance_state_t *state, void *user_data) {
+    switch (td_state) {
+        case TD_SINGLE_HOLD:
+            layer_off(FN2);
+            break;
+        default:
+            break;
+    }
+    td_state = TD_NONE;
+}
+
 #if defined(ENCODER_MAP_ENABLE)
 const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
     [MAC_BASE] = {ENCODER_CCW_CW(KC_VOLD, KC_VOLU)},
@@ -75,3 +126,7 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
     [FN2]      = {ENCODER_CCW_CW(_______, _______)},
 };
 #endif // ENCODER_MAP_ENABLE
+
+tap_dance_action_t tap_dance_actions[] = {
+    [TD_CMDCPY_FN2] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, cmdcpy_fn2_finished, cmdcpy_fn2_reset),
+};
