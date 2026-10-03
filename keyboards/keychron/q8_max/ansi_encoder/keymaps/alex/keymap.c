@@ -176,6 +176,7 @@ typedef struct {
 } chord_t;
 
 static const chord_t CHORD_TABLE[] = {
+    { {KC_P, KC_U, KC_NO}, "partial " },
     { {KC_P, KC_U, KC_NO}, "public " },
     { {KC_P, KC_R, KC_NO}, "private " },
     { {KC_P, KC_O, KC_NO}, "protected " },
