@@ -8,8 +8,12 @@ param()
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Flashing 'alex' keymap to keychron/q8_max/ansi_encoder..." -ForegroundColor Cyan
-Write-Host "Make sure the keyboard is in DFU mode (hold Esc while plugging in)." -ForegroundColor Yellow
+$count = 10
+while ($count -gt 0) {
+    Write-Host "Flashing 'alex' keymap to keychron/q8_max/ansi_encoder in $count seconds..." -ForegroundColor Cyan
+    Start-Sleep -Seconds 1
+    $count--
+}
 
 qmk flash -kb keychron/q8_max/ansi_encoder -km alex
 
