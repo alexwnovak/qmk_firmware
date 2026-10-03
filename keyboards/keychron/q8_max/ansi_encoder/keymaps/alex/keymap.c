@@ -35,6 +35,7 @@ typedef enum {
     TD_UNKNOWN,
     TD_SINGLE_TAP,
     TD_SINGLE_HOLD,
+    TD_DOUBLE_SINGLE_TAP,
 } td_state_t;
 
 static td_state_t td_state;
@@ -87,7 +88,10 @@ td_state_t cur_dance(tap_dance_state_t *state) {
             return TD_SINGLE_TAP;
         else
             return TD_SINGLE_HOLD;
+    } else if (state->count == 2) {
+        return TD_DOUBLE_SINGLE_TAP;
     }
+
     return TD_UNKNOWN;
 }
 
@@ -95,10 +99,14 @@ void cmdcopy_fn1_finished(tap_dance_state_t *state, void *user_data) {
     td_state = cur_dance(state);
     switch (td_state) {
         case TD_SINGLE_TAP:
-            tap_code16(LGUI(KC_C));  // Cmd+C
+            // tap_code16(LGUI(KC_C));  // Cmd+C
             break;
         case TD_SINGLE_HOLD:
             layer_on(LAYER_NAVIGATION);
+            break;
+        case TD_DOUBLE_SINGLE_TAP:
+            // tap_code16(LGUI(KC_C));
+            tap_code16(KC_C);
             break;
         default:
             break;
@@ -120,10 +128,14 @@ void cmdpaste_fn2_finished(tap_dance_state_t *state, void *user_data) {
     td_state = cur_dance(state);
     switch (td_state) {
         case TD_SINGLE_TAP:
-            tap_code16(LGUI(KC_V));  // Cmd+V
+            // tap_code16(LGUI(KC_V));  // Cmd+V
             break;
         case TD_SINGLE_HOLD:
             layer_on(LAYER_SYMBOLS);
+            break;
+        case TD_DOUBLE_SINGLE_TAP:
+            // tap_code16(LGUI(KC_V));
+            tap_code16(KC_V);
             break;
         default:
             break;
