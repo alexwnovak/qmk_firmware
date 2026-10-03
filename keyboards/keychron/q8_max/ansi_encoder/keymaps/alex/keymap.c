@@ -21,8 +21,8 @@ enum layers {
     LAYER_BASE,
     LAYER_NAVIGATION,
     LAYER_SYMBOLS,
-    LAYER_ADVANCED,
     LAYER_META,
+    LAYER_ADVANCED,
 };
 
 #define FN1_MAC MO(MAC_FN1)
@@ -69,6 +69,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______,            UG_PREV,  UG_VALD,  UG_HUED,  UG_SATD,  UG_SPDD,  _______,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
         _______,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______),
 
+    [LAYER_META] = LAYOUT_ansi_69(
+        KC_TILD,  KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,    KC_F11,   KC_F12,   _______,            _______,
+        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
+        _______,  _______,  _______,  _______,  _______,  _______,            _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
+        _______,            _______,  _______,  _______,  _______,  BAT_LVL,  BAT_LVL,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
+        _______,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______),
+
     [LAYER_ADVANCED] = LAYOUT_ansi_69(
         KC_GRV,   KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,   KC_VOLD,  KC_VOLU,  _______,            UG_TOGG,
         _______,  BT_HST1,  BT_HST2,  BT_HST3,  P2P4G,    _______,  _______,  _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
@@ -76,13 +83,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______,            UG_PREV,  UG_VALD,  UG_HUED,  UG_SATD,  UG_SPDD,  _______,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
         _______,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______),
 
-    [LAYER_META] = LAYOUT_ansi_69(
-        KC_TILD,  KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,    KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,    KC_F11,   KC_F12,   _______,            _______,
-        _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
-        _______,  _______,  _______,  _______,  _______,  _______,            _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
-        _______,            _______,  _______,  _______,  _______,  BAT_LVL,  BAT_LVL,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
-        _______,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______)
-};
+ };
 
 td_state_t cur_dance(tap_dance_state_t *state) {
     if (state->count == 1) {
@@ -124,8 +125,8 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
     [LAYER_BASE]       = {ENCODER_CCW_CW(KC_VOLD, KC_VOLU)},
     [LAYER_NAVIGATION] = {ENCODER_CCW_CW(KC_VOLD, KC_VOLU)},
     [LAYER_SYMBOLS]    = {ENCODER_CCW_CW(UG_VALD, UG_VALU)},
-    [LAYER_ADVANCED]   = {ENCODER_CCW_CW(UG_VALD, UG_VALU)},
     [LAYER_META]       = {ENCODER_CCW_CW(_______, _______)},
+    [LAYER_ADVANCED]   = {ENCODER_CCW_CW(UG_VALD, UG_VALU)},
 };
 #endif // ENCODER_MAP_ENABLE
 
