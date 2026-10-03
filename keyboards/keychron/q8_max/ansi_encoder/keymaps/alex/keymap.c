@@ -25,11 +25,6 @@ enum layers {
     LAYER_ADVANCED,
 };
 
-#define FN1_MAC MO(MAC_FN1)
-#define FN1_WIN MO(WIN_FN1)
-
-// ---- Tap dance: tap = Cmd+C, hold = FN2 layer ----
-
 enum td_keycodes {
     TD_CMDCOPY_FN1,
     TD_CMDPASTE_FN2
