@@ -1,4 +1,4 @@
 #pragma once
 
 #define TAPPING_TERM 150
-#define PERMISSIVE_HOLD
+#define HOLD_ON_OTHER_KEY_PRESS
