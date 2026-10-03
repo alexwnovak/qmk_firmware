@@ -14,6 +14,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define TAPPING_TERM 100
+
 #include QMK_KEYBOARD_H
 #include "keychron_common.h"
 
