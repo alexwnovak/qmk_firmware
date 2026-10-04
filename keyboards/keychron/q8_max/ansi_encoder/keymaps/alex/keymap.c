@@ -86,8 +86,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [LAYER_SYMBOLS] = LAYOUT_ansi_69(
         KC_GRV,   KC_BRID,  KC_BRIU,  KC_MCTRL, KC_LNPAD, UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,   KC_VOLD,  KC_VOLU,  _______,            UG_TOGG,
         _______,  BT_HST1,  BT_HST2,  BT_HST3,  P2P4G,    _______,  _______,  _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
-        UG_TOGG,  KC_LPRN,  KC_RPRN,  KC_LCBR,  KC_RCBR,  UG_SPDU,            _______,  _______,  _______,  _______,   _______,  _______,  _______,            KC_END,
-        _______,            KC_LBRC,  KC_RBRC,  KC_LT,    KC_GT,    UG_SPDD,  _______,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
+        UG_TOGG,  KC_LPRN,  KC_RPRN,  KC_LCBR,  KC_RCBR,  KC_DQUO,            _______,  _______,  _______,  _______,   _______,  _______,  _______,            KC_END,
+        _______,            KC_LBRC,  KC_RBRC,  KC_LT,    KC_GT,    KC_QUOT,  _______,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
         _______,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______),
 
     [LAYER_META] = LAYOUT_ansi_69(
