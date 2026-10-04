@@ -25,6 +25,10 @@ enum layers {
     LAYER_ADVANCED,
 };
 
+enum custom_keycodes {
+    STR_PARENS = SAFE_RANGE,
+};
+
 enum td_keycodes {
     TD_CMDCOPY_FN1,
     TD_CMDPASTE_FN2
@@ -76,7 +80,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [LAYER_ADVANCED] = LAYOUT_ansi_69(
         KC_GRV,   KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,   KC_VOLD,  KC_VOLU,  _______,            UG_TOGG,
         _______,  BT_HST1,  BT_HST2,  BT_HST3,  P2P4G,    _______,  _______,  _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
-        UG_TOGG,  UG_NEXT,  UG_VALU,  UG_HUEU,  UG_SATU,  UG_SPDU,            _______,  _______,  _______,  _______,   _______,  _______,  _______,            KC_END,
+        UG_TOGG,  STR_PARENS,  UG_VALU,  UG_HUEU,  UG_SATU,  UG_SPDU,            _______,  _______,  _______,  _______,   _______,  _______,  _______,            KC_END,
         _______,            UG_PREV,  UG_VALD,  UG_HUED,  UG_SATD,  UG_SPDD,  _______,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
         _______,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______),
 
@@ -290,6 +294,11 @@ static void try_fire_chords(void) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (keycode == STR_PARENS && record->event.pressed) {
+        send_string("()");
+        tap_code(KC_LEFT);
+        return false;
+    }
     if (!key_in_table(keycode)) return true;
 
     inflight_key_t *s = find_inflight(keycode);
