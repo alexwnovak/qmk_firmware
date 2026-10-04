@@ -27,6 +27,26 @@ enum layers {
 
 enum custom_keycodes {
     STR_PARENS = SAFE_RANGE,
+    STR_BRACES,
+    STR_BRACKETS,
+    STR_ANGLES,
+    STR_DQUOTE,
+    STR_QUOTE,
+};
+
+typedef struct {
+    uint16_t    keycode;
+    const char *output;
+    uint16_t    followup;   // keycode to tap after the string, or KC_NO for none
+} string_cmd_t;
+
+static const string_cmd_t STRING_TABLE[] = {
+    { STR_PARENS,   "()",   KC_LEFT },
+    { STR_BRACES,   "{}",   KC_LEFT },
+    { STR_BRACKETS, "[]",   KC_LEFT },
+    { STR_ANGLES,   "<>",   KC_LEFT },
+    { STR_DQUOTE,   "\"\"", KC_LEFT },
+    { STR_QUOTE,    "''",   KC_LEFT },
 };
 
 enum td_keycodes {
@@ -78,11 +98,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         QK_BOOT,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______),
 
     [LAYER_ADVANCED] = LAYOUT_ansi_69(
-        KC_GRV,   KC_BRID,  KC_BRIU,  KC_TASK,  KC_FILE,  UG_VALD,  UG_VALU,  KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,   KC_VOLD,  KC_VOLU,  _______,            UG_TOGG,
-        _______,  BT_HST1,  BT_HST2,  BT_HST3,  P2P4G,    _______,  _______,  _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
-        UG_TOGG,  STR_PARENS,  UG_VALU,  UG_HUEU,  UG_SATU,  UG_SPDU,            _______,  _______,  _______,  _______,   _______,  _______,  _______,            KC_END,
-        _______,            UG_PREV,  UG_VALD,  UG_HUED,  UG_SATD,  UG_SPDD,  _______,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
-        _______,  _______,  _______,            _______,            _______,  _______,            _______,             _______,            _______,  _______,  _______),
+        KC_GRV,   KC_BRID,     KC_BRIU,       KC_TASK,       KC_FILE,     UG_VALD,     UG_VALU,    KC_MPRV,  KC_MPLY,  KC_MNXT,  KC_MUTE,   KC_VOLD,  KC_VOLU,  _______,            UG_TOGG,
+        _______,  BT_HST1,     BT_HST2,       BT_HST3,       P2P4G,       _______,     _______,    _______,  _______,  _______,  _______,   _______,  _______,  _______,            _______,
+        UG_TOGG,  STR_PARENS,  STR_PARENS,    STR_BRACES,    STR_BRACES,  STR_DQUOTE,              _______,  _______,  _______,  _______,   _______,  _______,  _______,            KC_END,
+        _______,               STR_BRACKETS,  STR_BRACKETS,  STR_ANGLES,  STR_ANGLES,  STR_QUOTE,  _______,  _______,  _______,  _______,   _______,  _______,  _______,  _______,
+        _______,  _______,     _______,                      _______,                  _______,    _______,            _______,             _______,            _______,  _______,  _______),
 
  };
 
@@ -294,10 +314,14 @@ static void try_fire_chords(void) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == STR_PARENS && record->event.pressed) {
-        send_string("()");
-        tap_code(KC_LEFT);
-        return false;
+    if (record->event.pressed) {
+        for (size_t i = 0; i < sizeof(STRING_TABLE) / sizeof(STRING_TABLE[0]); i++) {
+            if (keycode == STRING_TABLE[i].keycode) {
+                send_string(STRING_TABLE[i].output);
+                if (STRING_TABLE[i].followup != KC_NO) tap_code(STRING_TABLE[i].followup);
+                    return false;
+            }
+        }
     }
     if (!key_in_table(keycode)) return true;
 
