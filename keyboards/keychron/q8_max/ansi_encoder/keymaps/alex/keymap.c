@@ -186,7 +186,7 @@ static const chord_t CHORD_TABLE[] = {
     { {KC_P, KC_A, KC_NO}, "partial " },
     { {KC_P, KC_U, KC_NO}, "public " },
     { {KC_P, KC_R, KC_NO}, "private " },
-    { {KC_P, KC_O, KC_NO}, "protected " },
+    { {KC_P, KC_T, KC_NO}, "protected " },
     { {KC_S, KC_T, KC_NO}, "static " },
     { {KC_S, KC_R, KC_NO}, "struct " },
     { {KC_V, KC_O, KC_NO}, "void " },
